@@ -2,15 +2,13 @@ from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
 # compatibility import for RecursiveCharacterTextSplitter
 try:
-    # older langchain layout
     from langchain.text_splitter import RecursiveCharacterTextSplitter
 except ModuleNotFoundError:
-    # newer separate package
     from langchain_text_splitters import RecursiveCharacterTextSplitter
 
 from langchain_community.document_loaders import PyPDFLoader
 from bare_act_retriever import BareActRetriever
-from typing import TypedDict, List, Annotated
+from typing import TypedDict, List
 from langchain_core.messages import BaseMessage, HumanMessage, AIMessage, SystemMessage
 from langgraph.graph import StateGraph, START, END
 from langgraph.graph.message import add_messages
@@ -32,8 +30,19 @@ class DocumentQATool:
         llm_model: str = "gpt-4o-mini",
     ):
         self.embedding_model = embedding_model
-        self.retriever = BareActRetriever(faiss_path=faiss_path, model=embedding_model)
-        self.llm = ChatOpenAI(model=llm_model)
+        
+        try:
+            self.retriever = BareActRetriever(faiss_path=faiss_path, model=embedding_model)
+        except FileNotFoundError as e:
+            raise FileNotFoundError(str(e))
+        except Exception as e:
+            raise Exception(f"Failed to initialize retriever: {str(e)}")
+        
+        try:
+            self.llm = ChatOpenAI(model=llm_model)
+        except Exception as e:
+            raise Exception(f"Failed to initialize LLM: {str(e)}. Check your OPENAI_API_KEY.")
+        
         self.graph = self.build_graph()
         self.vectorstore: FAISS = None  # Initialized later in upload_pdf_and_embed()
 
@@ -52,11 +61,15 @@ class DocumentQATool:
             return False
 
     def _retriever_node_legal_data(self, state: GraphState) -> GraphState:
-        docs = self.retriever.retrieve(state["query"])
         try:
-            state["context_legal"] = [doc.page_content for doc in docs]
-        except AttributeError:
-            state["context_legal"] = [doc["content"] for doc in docs]
+            docs = self.retriever.retrieve(state["query"])
+            try:
+                state["context_legal"] = [doc.page_content for doc in docs]
+            except AttributeError:
+                state["context_legal"] = [doc["content"] for doc in docs]
+        except Exception as e:
+            print(f"Legal retrieval error: {e}")
+            state["context_legal"] = []
         return state
 
     def _retriever_node_docs(self, state: GraphState) -> GraphState:
@@ -64,8 +77,14 @@ class DocumentQATool:
             print("Warning: Vectorstore is not initialized. Skipping doc retrieval.")
             state["context_docs"] = []
             return state
-        docs = self.vectorstore.similarity_search(state["query"], k=4)
-        state["context_docs"] = [doc.page_content for doc in docs]
+        
+        try:
+            docs = self.vectorstore.similarity_search(state["query"], k=4)
+            state["context_docs"] = [doc.page_content for doc in docs]
+        except Exception as e:
+            print(f"Document retrieval error: {e}")
+            state["context_docs"] = []
+        
         return state
 
     def _memory_node(self, state: GraphState) -> GraphState:
@@ -79,8 +98,8 @@ You help users understand legal judgments and official documents in simple, clea
 You refer to Bare Act data and retrieved documents to answer the question.
 NEVER give legal advice. Always cite the Act or Section where possible."""
 
-        context_docs = "\n\n".join(state["context_docs"])
-        context_legal = "\n\n".join(state["context_legal"])
+        context_docs = "\n\n".join(state["context_docs"]) if state["context_docs"] else "No document context available."
+        context_legal = "\n\n".join(state["context_legal"]) if state["context_legal"] else "No legal context available."
 
         messages = [
             SystemMessage(content=system_prompt),
@@ -90,9 +109,15 @@ NEVER give legal advice. Always cite the Act or Section where possible."""
             ),
         ]
 
-        response = self.llm.invoke(messages)
-        state["messages"].append(AIMessage(content=response.content))
-        state["response"] = response.content
+        try:
+            response = self.llm.invoke(messages)
+            state["messages"].append(AIMessage(content=response.content))
+            state["response"] = response.content
+        except Exception as e:
+            error_msg = f"Error generating response: {str(e)}"
+            state["messages"].append(AIMessage(content=error_msg))
+            state["response"] = error_msg
+        
         return state
 
     def llm_node_streaming(self, state: GraphState):
@@ -102,8 +127,8 @@ You help users understand legal judgments and official documents in simple, clea
 You refer to Bare Act data and retrieved documents to answer the question.
 NEVER give legal advice. Always cite the Act or Section where possible."""
 
-        context_docs = "\n\n".join(state["context_docs"])
-        context_legal = "\n\n".join(state["context_legal"])
+        context_docs = "\n\n".join(state["context_docs"]) if state["context_docs"] else "No document context available."
+        context_legal = "\n\n".join(state["context_legal"]) if state["context_legal"] else "No legal context available."
 
         messages = [
             SystemMessage(content=system_prompt),
@@ -162,19 +187,26 @@ NEVER give legal advice. Always cite the Act or Section where possible."""
         state["messages"].append(HumanMessage(content=query))
 
         # Run retrieval for legal data
-        docs = self.retriever.retrieve(state["query"])
         try:
-            state["context_legal"] = [doc.page_content for doc in docs]
-        except AttributeError:
-            state["context_legal"] = [doc["content"] for doc in docs]
+            docs = self.retriever.retrieve(state["query"])
+            try:
+                state["context_legal"] = [doc.page_content for doc in docs]
+            except AttributeError:
+                state["context_legal"] = [doc["content"] for doc in docs]
+        except Exception as e:
+            print(f"Legal retrieval error: {e}")
+            state["context_legal"] = []
 
         # Run retrieval for documents
         if self.vectorstore:
-            docs = self.vectorstore.similarity_search(state["query"], k=4)
-            state["context_docs"] = [doc.page_content for doc in docs]
+            try:
+                docs = self.vectorstore.similarity_search(state["query"], k=4)
+                state["context_docs"] = [doc.page_content for doc in docs]
+            except Exception as e:
+                print(f"Document retrieval error: {e}")
+                state["context_docs"] = []
         else:
             state["context_docs"] = []
 
         # Stream LLM response
         yield from self.llm_node_streaming(state)
-
