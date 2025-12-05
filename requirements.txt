@@ -14,4 +14,5 @@ numpy
 faiss-cpu
 pypdf
 
+
 langgraph
