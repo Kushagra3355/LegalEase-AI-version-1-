@@ -10,7 +10,7 @@ class BareActRetriever:
 
     def __init__(
         self,
-        faiss_path: str = "faiss_index_legal_optimized",
+        faiss_path: str = "faiss_index_legal",
         model: str = "text-embedding-3-small",
     ):
         self.embeddings = OpenAIEmbeddings(model=model)
@@ -36,4 +36,5 @@ class BareActRetriever:
             )
 
         return formatted_docs
+
 
