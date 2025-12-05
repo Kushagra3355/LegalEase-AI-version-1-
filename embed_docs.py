@@ -168,5 +168,6 @@ def embed_pdfs_optimized(pdf_dir_path: str, faiss_save_path: str):
 
 if __name__ == "__main__":
     embed_pdfs_optimized(
-        pdf_dir_path="legal data", faiss_save_path="faiss_index_legal_optimized"
+        pdf_dir_path="legal data", faiss_save_path="faiss_index_legal"
     )
+
