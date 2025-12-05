@@ -94,14 +94,14 @@ with st.sidebar:
 
     tool_option = st.radio(
         "Choose a tool:",
-        ["Chatbot", "Document Summarizer"],
+        ["NyayGPT", "Ask Document"],
         label_visibility="collapsed",
     )
 
     st.divider()
 
     st.info(
-        "**Chatbot**: Get legal guidance and consultation\n\n**Document Summarizer**: Upload and analyze PDF documents"
+        "**NyayGPT**: Get legal guidance and consultation\n\n**Ask Document**: Upload and analyze PDF documents"
     )
 
 # Initialize tool selection
@@ -131,15 +131,15 @@ def display_streaming_response(generator):
 
 
 # Main content
-if st.session_state.selected_tool == "Chatbot":
+if st.session_state.selected_tool == "NyayGPT":
     # Initialize chatbot
     if "chatbot" not in st.session_state:
         try:
-            with st.spinner("Initializing chatbot..."):
+            with st.spinner("Initializing NyayGPT..."):
                 st.session_state.chatbot = LegalGraphChatBot()
                 st.session_state.chatbot_state = st.session_state.chatbot.init_state()
                 st.session_state.chatbot_history = []
-                st.success("✓ Chatbot initialized successfully!")
+                st.success("✓ NyayGPT initialized successfully!")
         except FileNotFoundError as e:
             st.error(str(e))
             st.info("""
@@ -150,13 +150,13 @@ if st.session_state.selected_tool == "Chatbot":
             """)
             st.stop()
         except Exception as e:
-            st.error(f"❌ Failed to initialize chatbot: {str(e)}")
+            st.error(f"❌ Failed to initialize NyayGPT: {str(e)}")
             with st.expander("Show full error"):
                 import traceback
                 st.code(traceback.format_exc())
             st.stop()
 
-    st.subheader("Legal Chatbot")
+    st.subheader("NyayGPT")
     st.write(
         "Ask questions about Indian law, legal procedures, rights, and regulations."
     )
@@ -196,7 +196,7 @@ if st.session_state.selected_tool == "Chatbot":
                     import traceback
                     st.code(traceback.format_exc())
 
-elif st.session_state.selected_tool == "Document Summarizer":
+elif st.session_state.selected_tool == "Ask Document":
     # Initialize document bot
     if "docbot" not in st.session_state:
         try:
@@ -221,7 +221,7 @@ elif st.session_state.selected_tool == "Document Summarizer":
                 st.code(traceback.format_exc())
             st.stop()
 
-    st.subheader("Document Summarizer")
+    st.subheader("Ask Document")
     st.write("Upload PDF documents for AI-powered analysis and summarization.")
 
     st.divider()
