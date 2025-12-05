@@ -1,6 +1,13 @@
 from langchain_openai import ChatOpenAI, OpenAIEmbeddings
 from langchain_community.vectorstores import FAISS
-from langchain.text_splitter import RecursiveCharacterTextSplitter
+# compatibility import for RecursiveCharacterTextSplitter
+try:
+    # older langchain layout
+    from langchain.text_splitter import RecursiveCharacterTextSplitter
+except ModuleNotFoundError:
+    # newer separate package
+    from langchain_text_splitters import RecursiveCharacterTextSplitter
+
 from langchain_community.document_loaders import PyPDFLoader
 from bare_act_retriever import BareActRetriever
 from typing import TypedDict, List, Annotated
@@ -170,3 +177,4 @@ NEVER give legal advice. Always cite the Act or Section where possible."""
 
         # Stream LLM response
         yield from self.llm_node_streaming(state)
+
