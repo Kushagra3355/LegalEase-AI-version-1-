@@ -94,14 +94,14 @@ with st.sidebar:
 
     tool_option = st.radio(
         "Choose a tool:",
-        ["NyayGPT", "Ask Document"],
+        ["Chatbot", "Document Summarizer"],
         label_visibility="collapsed",
     )
 
     st.divider()
 
     st.info(
-        "**NyayGPT**: Get legal guidance and consultation\n\n**Ask Document**: Upload and analyze PDF documents"
+        "**Chatbot**: Get legal guidance and consultation\n\n**Document Summarizer**: Upload and analyze PDF documents"
     )
 
 # Initialize tool selection
@@ -304,4 +304,3 @@ elif st.session_state.selected_tool == "Document Summarizer":
 # Footer
 st.divider()
 st.caption("LegalEase AI - Your Legal Assistant")
-
