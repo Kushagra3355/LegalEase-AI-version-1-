@@ -13,6 +13,19 @@ st.set_page_config(
     layout="wide",
 )
 
+# Check for OpenAI API key
+if not os.getenv("OPENAI_API_KEY"):
+    st.error("⚠️ OpenAI API key not found!")
+    st.info("""
+    **For local development:** Add `OPENAI_API_KEY` to your `.env` file
+    
+    **For Streamlit Cloud:** Go to Settings → Secrets and add:
+    ```
+    OPENAI_API_KEY = "your-api-key-here"
+    ```
+    """)
+    st.stop()
+
 # Simple styling
 st.markdown(
     """
@@ -53,6 +66,11 @@ st.markdown(
     
     .stButton > button:hover {
         background-color: #1d4ed8;
+    }
+    
+    /* Error styling */
+    .stAlert {
+        border-radius: 5px;
     }
 </style>
 """,
@@ -106,6 +124,7 @@ def display_streaming_response(generator):
                 time.sleep(0.03)
     except Exception as e:
         response_text = f"Error: {str(e)}"
+        response_container.error(response_text)
 
     response_container.markdown(response_text)
     return response_text
@@ -115,10 +134,27 @@ def display_streaming_response(generator):
 if st.session_state.selected_tool == "Chatbot":
     # Initialize chatbot
     if "chatbot" not in st.session_state:
-        with st.spinner("Initializing chatbot..."):
-            st.session_state.chatbot = LegalGraphChatBot()
-            st.session_state.chatbot_state = st.session_state.chatbot.init_state()
-            st.session_state.chatbot_history = []
+        try:
+            with st.spinner("Initializing chatbot..."):
+                st.session_state.chatbot = LegalGraphChatBot()
+                st.session_state.chatbot_state = st.session_state.chatbot.init_state()
+                st.session_state.chatbot_history = []
+                st.success("✓ Chatbot initialized successfully!")
+        except FileNotFoundError as e:
+            st.error(str(e))
+            st.info("""
+            **To fix this:**
+            1. Run `python embed_docs.py` locally to create the FAISS index
+            2. Commit the `faiss_index_legal` folder to your repository
+            3. If the folder is too large (>100MB), use Git LFS or cloud storage
+            """)
+            st.stop()
+        except Exception as e:
+            st.error(f"❌ Failed to initialize chatbot: {str(e)}")
+            with st.expander("Show full error"):
+                import traceback
+                st.code(traceback.format_exc())
+            st.stop()
 
     st.subheader("Legal Chatbot")
     st.write(
@@ -155,15 +191,35 @@ if st.session_state.selected_tool == "Chatbot":
                 st.rerun()
 
             except Exception as e:
-                st.error(f"Error: {e}")
+                st.error(f"❌ Error: {str(e)}")
+                with st.expander("Show details"):
+                    import traceback
+                    st.code(traceback.format_exc())
 
 elif st.session_state.selected_tool == "Document Summarizer":
     # Initialize document bot
     if "docbot" not in st.session_state:
-        with st.spinner("Initializing document analyzer..."):
-            st.session_state.docbot = DocumentQATool()
-            st.session_state.docbot_state = st.session_state.docbot.init_state()
-            st.session_state.docbot_history = []
+        try:
+            with st.spinner("Initializing document analyzer..."):
+                st.session_state.docbot = DocumentQATool()
+                st.session_state.docbot_state = st.session_state.docbot.init_state()
+                st.session_state.docbot_history = []
+                st.success("✓ Document analyzer initialized successfully!")
+        except FileNotFoundError as e:
+            st.error(str(e))
+            st.info("""
+            **To fix this:**
+            1. Run `python embed_docs.py` locally to create the FAISS index
+            2. Commit the `faiss_index_legal` folder to your repository
+            3. If the folder is too large (>100MB), use Git LFS or cloud storage
+            """)
+            st.stop()
+        except Exception as e:
+            st.error(f"❌ Failed to initialize document analyzer: {str(e)}")
+            with st.expander("Show full error"):
+                import traceback
+                st.code(traceback.format_exc())
+            st.stop()
 
     st.subheader("Document Summarizer")
     st.write("Upload PDF documents for AI-powered analysis and summarization.")
@@ -202,10 +258,13 @@ elif st.session_state.selected_tool == "Document Summarizer":
                     if success:
                         st.success("✓ Document processed successfully!")
                     else:
-                        st.error("Failed to process document.")
+                        st.error("❌ Failed to process document.")
 
             except Exception as e:
-                st.error(f"Error: {e}")
+                st.error(f"❌ Error: {str(e)}")
+                with st.expander("Show details"):
+                    import traceback
+                    st.code(traceback.format_exc())
 
     st.divider()
 
@@ -237,7 +296,10 @@ elif st.session_state.selected_tool == "Document Summarizer":
                 st.rerun()
 
             except Exception as e:
-                st.error(f"Error: {e}")
+                st.error(f"❌ Error: {str(e)}")
+                with st.expander("Show details"):
+                    import traceback
+                    st.code(traceback.format_exc())
 
 # Footer
 st.divider()
