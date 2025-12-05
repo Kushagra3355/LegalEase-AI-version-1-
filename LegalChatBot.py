@@ -19,8 +19,18 @@ class LegalGraphChatBot:
         embedding_model: str = "text-embedding-3-small",
         llm_model: str = "gpt-4o-mini",
     ):
-        self.retriever = BareActRetriever(faiss_path=faiss_path, model=embedding_model)
-        self.llm = ChatOpenAI(model=llm_model)
+        try:
+            self.retriever = BareActRetriever(faiss_path=faiss_path, model=embedding_model)
+        except FileNotFoundError as e:
+            raise FileNotFoundError(str(e))
+        except Exception as e:
+            raise Exception(f"Failed to initialize retriever: {str(e)}")
+        
+        try:
+            self.llm = ChatOpenAI(model=llm_model)
+        except Exception as e:
+            raise Exception(f"Failed to initialize LLM: {str(e)}. Check your OPENAI_API_KEY.")
+        
         self.graph = self._build_graph()
 
     def _memory_node(self, state: GraphState) -> GraphState:
@@ -29,44 +39,56 @@ class LegalGraphChatBot:
         return state
 
     def _retriever_node(self, state: GraphState) -> GraphState:
-        docs = self.retriever.retrieve(state["query"])
-        state["context_docs"] = [doc["content"] for doc in docs]
+        try:
+            docs = self.retriever.retrieve(state["query"])
+            state["context_docs"] = [doc["content"] for doc in docs]
+        except Exception as e:
+            print(f"Retrieval error: {e}")
+            state["context_docs"] = []
         return state
 
     def _llm_node(self, state: GraphState) -> GraphState:
         system_prompt = """You are a legal assistant specialized in Indian law. You help users understand the law simply,  
             based on their question and the context retrieved from bare acts.
-            Keep the explaination as small as possible.
+            Keep the explanation as small as possible.
             NEVER give legal advice. Always cite the source (act or section)."""
-        context = "\n\n".join(state["context_docs"])
+        
+        context = "\n\n".join(state["context_docs"]) if state["context_docs"] else "No relevant context found."
+        
         messages = [
-            {"role": "system", "content": system_prompt},
+            SystemMessage(content=system_prompt),
             *state["messages"],
-            {
-                "role": "user",
-                "content": f"Context:\n{context}\n\nQuestion:\n{state['query']}",
-            },
+            HumanMessage(
+                content=f"Context:\n{context}\n\nQuestion:\n{state['query']}"
+            ),
         ]
 
-        response = self.llm.invoke(messages)
-        state["messages"].append(AIMessage(content=response.content))
-        state["response"] = response.content
+        try:
+            response = self.llm.invoke(messages)
+            state["messages"].append(AIMessage(content=response.content))
+            state["response"] = response.content
+        except Exception as e:
+            error_msg = f"Error generating response: {str(e)}"
+            state["messages"].append(AIMessage(content=error_msg))
+            state["response"] = error_msg
+        
         return state
 
     def _llm_node_streaming(self, state: GraphState):
         """Streaming version of the LLM node that yields chunks"""
         system_prompt = """You are a legal assistant specialized in Indian law. You help users understand the law simply,  
             based on their question and the context retrieved from bare acts.
-            Keep the explaination as small as possible.
+            Keep the explanation as small as possible.
             NEVER give legal advice. Always cite the source (act or section)."""
-        context = "\n\n".join(state["context_docs"])
+        
+        context = "\n\n".join(state["context_docs"]) if state["context_docs"] else "No relevant context found."
+        
         messages = [
-            {"role": "system", "content": system_prompt},
+            SystemMessage(content=system_prompt),
             *state["messages"],
-            {
-                "role": "user",
-                "content": f"Context:\n{context}\n\nQuestion:\n{state['query']}",
-            },
+            HumanMessage(
+                content=f"Context:\n{context}\n\nQuestion:\n{state['query']}"
+            ),
         ]
 
         full_response = ""
@@ -84,7 +106,6 @@ class LegalGraphChatBot:
         state["response"] = full_response
 
     def _build_graph(self):
-
         graph_builder = StateGraph(GraphState)
         graph_builder.add_node("memory", self._memory_node)
         graph_builder.add_node("retrieve", self._retriever_node)
@@ -110,8 +131,12 @@ class LegalGraphChatBot:
         state["messages"].append(HumanMessage(content=query))
 
         # Run retrieval
-        docs = self.retriever.retrieve(state["query"])
-        state["context_docs"] = [doc["content"] for doc in docs]
+        try:
+            docs = self.retriever.retrieve(state["query"])
+            state["context_docs"] = [doc["content"] for doc in docs]
+        except Exception as e:
+            print(f"Retrieval error: {e}")
+            state["context_docs"] = []
 
         # Stream LLM response
         yield from self._llm_node_streaming(state)
