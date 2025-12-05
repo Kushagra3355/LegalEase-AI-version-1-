@@ -22,7 +22,7 @@ class DocumentQATool:
         self,
         faiss_path: str = "faiss_index_legal",
         embedding_model: str = "text-embedding-3-small",
-        llm_model: str = "gpt-5",
+        llm_model: str = "gpt-4o-mini",
     ):
         self.embedding_model = embedding_model
         self.retriever = BareActRetriever(faiss_path=faiss_path, model=embedding_model)
@@ -88,6 +88,38 @@ NEVER give legal advice. Always cite the Act or Section where possible."""
         state["response"] = response.content
         return state
 
+    def llm_node_streaming(self, state: GraphState):
+        """Streaming version of the LLM node that yields chunks"""
+        system_prompt = """You are a legal assistant specialized in Indian law. 
+You help users understand legal judgments and official documents in simple, clear language.
+You refer to Bare Act data and retrieved documents to answer the question.
+NEVER give legal advice. Always cite the Act or Section where possible."""
+
+        context_docs = "\n\n".join(state["context_docs"])
+        context_legal = "\n\n".join(state["context_legal"])
+
+        messages = [
+            SystemMessage(content=system_prompt),
+            *state["messages"],
+            HumanMessage(
+                content=f"Context:\n{context_docs}\n\nQuestion:\n{state['query']}\n\nBare Acts:\n{context_legal}"
+            ),
+        ]
+
+        full_response = ""
+        try:
+            for chunk in self.llm.stream(messages):
+                if chunk.content:
+                    full_response += chunk.content
+                    yield chunk.content
+        except Exception as e:
+            error_msg = f"Error generating response: {str(e)}"
+            full_response = error_msg
+            yield error_msg
+
+        state["messages"].append(AIMessage(content=full_response))
+        state["response"] = full_response
+
     def build_graph(self):
         builder = StateGraph(GraphState)
 
@@ -117,3 +149,24 @@ NEVER give legal advice. Always cite the Act or Section where possible."""
         state["query"] = query
         return self.graph.invoke(state)
 
+    def invoke_streaming(self, state: GraphState, query: str):
+        """Streaming version that yields response chunks"""
+        state["query"] = query
+        state["messages"].append(HumanMessage(content=query))
+
+        # Run retrieval for legal data
+        docs = self.retriever.retrieve(state["query"])
+        try:
+            state["context_legal"] = [doc.page_content for doc in docs]
+        except AttributeError:
+            state["context_legal"] = [doc["content"] for doc in docs]
+
+        # Run retrieval for documents
+        if self.vectorstore:
+            docs = self.vectorstore.similarity_search(state["query"], k=4)
+            state["context_docs"] = [doc.page_content for doc in docs]
+        else:
+            state["context_docs"] = []
+
+        # Stream LLM response
+        yield from self.llm_node_streaming(state)
