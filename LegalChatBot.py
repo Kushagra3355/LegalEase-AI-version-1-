@@ -17,7 +17,7 @@ class LegalGraphChatBot:
         self,
         faiss_path: str = "faiss_index_legal",
         embedding_model: str = "text-embedding-3-small",
-        llm_model: str = "gpt-5",
+        llm_model: str = "gpt-4o-mini",
     ):
         self.retriever = BareActRetriever(faiss_path=faiss_path, model=embedding_model)
         self.llm = ChatOpenAI(model=llm_model)
@@ -31,6 +31,7 @@ class LegalGraphChatBot:
     def _retriever_node(self, state: GraphState) -> GraphState:
         docs = self.retriever.retrieve(state["query"])
         state["context_docs"] = [doc["content"] for doc in docs]
+        return state
 
     def _llm_node(self, state: GraphState) -> GraphState:
         system_prompt = """You are a legal assistant specialized in Indian law. You help users understand the law simply,  
@@ -52,6 +53,36 @@ class LegalGraphChatBot:
         state["response"] = response.content
         return state
 
+    def _llm_node_streaming(self, state: GraphState):
+        """Streaming version of the LLM node that yields chunks"""
+        system_prompt = """You are a legal assistant specialized in Indian law. You help users understand the law simply,  
+            based on their question and the context retrieved from bare acts.
+            Keep the explaination as small as possible.
+            NEVER give legal advice. Always cite the source (act or section)."""
+        context = "\n\n".join(state["context_docs"])
+        messages = [
+            {"role": "system", "content": system_prompt},
+            *state["messages"],
+            {
+                "role": "user",
+                "content": f"Context:\n{context}\n\nQuestion:\n{state['query']}",
+            },
+        ]
+
+        full_response = ""
+        try:
+            for chunk in self.llm.stream(messages):
+                if chunk.content:
+                    full_response += chunk.content
+                    yield chunk.content
+        except Exception as e:
+            error_msg = f"Error generating response: {str(e)}"
+            full_response = error_msg
+            yield error_msg
+
+        state["messages"].append(AIMessage(content=full_response))
+        state["response"] = full_response
+
     def _build_graph(self):
 
         graph_builder = StateGraph(GraphState)
@@ -71,5 +102,16 @@ class LegalGraphChatBot:
 
     def invoke(self, state: GraphState, query: str) -> GraphState:
         state["query"] = query
-
         return self.graph.invoke(state)
+
+    def invoke_streaming(self, state: GraphState, query: str):
+        """Streaming version that yields response chunks"""
+        state["query"] = query
+        state["messages"].append(HumanMessage(content=query))
+
+        # Run retrieval
+        docs = self.retriever.retrieve(state["query"])
+        state["context_docs"] = [doc["content"] for doc in docs]
+
+        # Stream LLM response
+        yield from self._llm_node_streaming(state)
