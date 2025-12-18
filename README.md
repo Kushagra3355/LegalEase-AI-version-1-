@@ -1,150 +1,161 @@
-# 🎓 EduAI – AI-Powered Learning Assistant
+# ⚖️ LegalEase AI
 
-EduAI is an interactive **AI-powered study assistant** built with **Streamlit**, **LangChain**, **LangGraph**, and **OpenAI models**.  
-It allows users to upload PDF study materials and then:
+**LegalEase AI** is an AI-powered legal assistant focused on **Indian law**, built using **Streamlit**, **LangChain**, **LangGraph**, **FAISS**, and **OpenAI models**.  
+It enables users to ask legal questions, analyze legal documents, and retrieve relevant sections from **Bare Acts**, all with context-aware, explainable responses.
 
-- Ask intelligent, context-aware questions  
-- Generate structured study notes  
-- Create exam-ready multiple-choice questions (MCQs)  
-- Manage multiple learning sessions with persistent memory  
-
-The system uses **Retrieval-Augmented Generation (RAG)** with **FAISS vector search** and **SQLite** for persistent storage.
+GitHub: https://github.com/Kushagra3355
 
 ---
 
-## 📚 Table of Contents
+## 📚 Features
 
-- Features  
-- Project Structure  
-- Installation  
-- Configuration  
-- Usage  
-- Core Components  
-- Database Design  
-- Technologies Used  
-- Troubleshooting  
-- Future Enhancements  
-- License  
+- ⚖️ **NyayGPT** – Ask questions about Indian law and legal procedures  
+- 📄 **Ask Document** – Upload and analyze legal PDF documents  
+- 🔍 **Bare Act Retrieval** using FAISS vector search  
+- 💬 **Streaming AI Responses**  
+- 📚 Context-aware answers with source references  
+- 🧠 Retrieval-Augmented Generation (RAG)  
+- 🎨 Clean and simple Streamlit UI  
+
+> ⚠️ **Disclaimer:** This tool is for educational and informational purposes only. It does **not** provide legal advice.
 
 ---
 
-## ✨ Features
+## 🏗️ Project Structure
 
-- 📤 Upload multiple PDF documents  
-- 🔎 Semantic document-based question answering  
-- 📝 Automatic study notes generation  
-- 📋 MCQ generation with answer keys  
-- 💬 Streaming AI responses  
-- 🗂️ Session-based learning with history  
-- 💾 Persistent storage using SQLite  
-- 🎨 Modern dark-themed Streamlit UI  
-
----
-
-## 🏗 Project Structure
-
-EduAI/
+```
+LegalEase-AI/
 │
-├── app.py                  # Main Streamlit application  
-├── build_vectorstore.py    # PDF embedding and FAISS index creation  
-├── DocQA.py                # Retrieval-Augmented Q&A system  
-├── Notes.py                # Study notes generator  
-├── MCQs.py                 # MCQ generator  
-├── database.py             # SQLite database manager  
-├── auth_manager.py         # (Optional) Authentication logic  
-├── auth_pages.py           # (Optional) Login & signup UI  
-├── faiss_index_local/      # Generated FAISS vector store  
-└── eduai_data.db           # SQLite database (auto-generated)  
+├── main.py                     # Streamlit application entry point
+├── embed_docs.py               # Optimized Bare Act PDF embedding
+├── LegalChatBot.py             # NyayGPT (Legal Q&A system)
+├── DocumentQAGraph.py          # Ask Document tool
+├── bare_act_retriever.py       # FAISS-based legal retriever
+├── faiss_index_legal/          # Generated FAISS index (required)
+└── .env                        # OpenAI API key
+```
 
 ---
 
 ## ⚙️ Installation
 
 ### 1. Clone the Repository
-git clone https://github.com/Kushagra3355/LegalEase-AI-version-1-.git
-cd eduai  
+```bash
+git clone https://github.com/Kushagra3355/LegalEase-AI.git
+cd LegalEase-AI
+```
 
-### 2. Create a Virtual Environment
-python -m venv venv  
-source venv/bin/activate  
+### 2. Create Virtual Environment (Recommended)
+```bash
+python -m venv venv
+source venv/bin/activate    # Windows: venv\Scripts\activate
+```
 
 ### 3. Install Dependencies
-pip install -r requirements.txt  
+```bash
+pip install -r requirements.txt
+```
 
 ---
 
 ## 🔐 Configuration
 
-Set your OpenAI API key:
+### OpenAI API Key
 
-export OPENAI_API_KEY="your-api-key"
+Create a `.env` file in the project root:
 
-or using Streamlit secrets:
+```env
+OPENAI_API_KEY=your-openai-api-key
+```
 
-OPENAI_API_KEY="your-api-key"
-
----
-
-## 🚀 Usage
-
-Run the application:
-
-streamlit run app.py
-
-1. Upload PDF documents  
-2. Process documents  
-3. Ask questions / Generate notes / Create MCQs  
-4. Download generated content  
+For **Streamlit Cloud**, add it under **Settings → Secrets**.
 
 ---
 
-## 🧠 Core Components
+## 🧠 Creating the FAISS Index (Required)
 
-- **Document Q&A** – Context-aware question answering using FAISS + LLM  
-- **Notes Generator** – Structured academic notes generation  
-- **MCQ Generator** – Exam-ready multiple-choice questions  
-- **Database Manager** – Persistent session & content storage  
+Before running the app, you **must generate the FAISS vector store**:
+
+```bash
+python embed_docs.py
+```
+
+This creates the `faiss_index_legal/` directory, which is required at runtime.
+
+> ⚠️ If the index exceeds GitHub size limits, use **Git LFS** or cloud storage.
 
 ---
 
-## 🗃 Database Design
+## 🚀 Running the Application
 
-Tables:
-- sessions  
-- conversations  
-- documents  
-- generated_content  
-- app_state  
+```bash
+streamlit run main.py
+```
+
+---
+
+## 🧩 Application Modes
+
+### ⚖️ NyayGPT
+- Ask questions about Indian laws
+- Retrieves relevant Bare Act sections
+- Generates concise, easy-to-understand explanations
+- Always cites sources
+- Never gives legal advice
+
+### 📄 Ask Document
+- Upload legal PDFs (judgments, contracts, notices)
+- Ask questions based on uploaded documents
+- Combines document context with Bare Act references
 
 ---
 
 ## 🧰 Technologies Used
 
-- Streamlit  
-- LangChain & LangGraph  
-- OpenAI GPT Models  
-- FAISS  
-- SQLite  
-- Python  
+- **Frontend**: Streamlit  
+- **LLM**: OpenAI (GPT-4o-mini)  
+- **Embeddings**: text-embedding-3-small  
+- **Vector Store**: FAISS  
+- **Orchestration**: LangGraph  
+- **Backend**: Python  
 
 ---
 
 ## 🛠 Troubleshooting
 
-- Ensure documents are uploaded before querying  
-- Verify OpenAI API key  
-- Large PDFs may take time to process  
+**FAISS index not found**
+- Run `python embed_docs.py`
+- Ensure `faiss_index_legal/` exists
+
+**OpenAI API error**
+- Check `.env` file or Streamlit secrets
+- Verify API key validity
+
+**Large index size**
+- Use Git LFS or external storage
 
 ---
 
 ## 🚧 Future Enhancements
 
+- Multi-language legal support  
+- Case law database integration  
 - User authentication  
-- Support for DOCX/TXT  
-- Cloud vector storage  
-- Multi-user support  
+- Cloud-hosted vector database  
+- PDF citation highlighting  
 
 ---
 
+## 📄 License
 
-Happy Learning with EduAI 🎓
+MIT License
+
+---
+
+### 👤 Author
+**Kushagra**  
+GitHub: https://github.com/Kushagra3355
+
+---
+
+⚖️ *LegalEase AI – Making Indian law more accessible, one question at a time.*
