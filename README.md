@@ -61,7 +61,7 @@ EduAI/
 ## ⚙️ Installation
 
 ### 1. Clone the Repository
-git clone https://github.com/Kushagra3355/eduai.git  
+git clone https://github.com/Kushagra3355/LegalEase-AI-version-1-.git
 cd eduai  
 
 ### 2. Create a Virtual Environment
