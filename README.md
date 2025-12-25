@@ -120,6 +120,3 @@ GitHub: https://github.com/Kushagra3355
 
 ---
 
-## 📄 License
-
-MIT License
