@@ -2,6 +2,8 @@
 # ⚖️ LegalEase AI  
 **AI-Powered Legal Assistant for Indian Law**
 
+🚀 **Live Demo:** https://legal-assistance-ai.streamlit.app/
+
 LegalEase AI is an intelligent legal assistant that leverages **RAG (Retrieval-Augmented Generation)**, **FAISS vector search**, and **LangGraph** to help users understand Indian laws and analyze legal documents in simple language.
 
 ---
