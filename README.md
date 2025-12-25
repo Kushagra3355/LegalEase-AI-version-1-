@@ -1,161 +1,125 @@
-# ⚖️ LegalEase AI
 
-**LegalEase AI** is an AI-powered legal assistant focused on **Indian law**, built using **Streamlit**, **LangChain**, **LangGraph**, **FAISS**, and **OpenAI models**.  
-It enables users to ask legal questions, analyze legal documents, and retrieve relevant sections from **Bare Acts**, all with context-aware, explainable responses.
+# ⚖️ LegalEase AI  
+**AI-Powered Legal Assistant for Indian Law**
 
-GitHub: https://github.com/Kushagra3355
-
----
-
-## 📚 Features
-
-- ⚖️ **NyayGPT** – Ask questions about Indian law and legal procedures  
-- 📄 **Ask Document** – Upload and analyze legal PDF documents  
-- 🔍 **Bare Act Retrieval** using FAISS vector search  
-- 💬 **Streaming AI Responses**  
-- 📚 Context-aware answers with source references  
-- 🧠 Retrieval-Augmented Generation (RAG)  
-- 🎨 Clean and simple Streamlit UI  
-
-> ⚠️ **Disclaimer:** This tool is for educational and informational purposes only. It does **not** provide legal advice.
+LegalEase AI is an intelligent legal assistant that leverages **RAG (Retrieval-Augmented Generation)**, **FAISS vector search**, and **LangGraph** to help users understand Indian laws and analyze legal documents in simple language.
 
 ---
 
-## 🏗️ Project Structure
+## ✨ Features
+
+- Bare Act–based legal question answering (NyayGPT)
+- PDF document upload and Q&A
+- FAISS-powered semantic search
+- LangGraph-based conversational workflows
+- Streaming AI responses
+- Streamlit web interface
+
+---
+
+## 📁 Project Structure
 
 ```
 LegalEase-AI/
 │
-├── main.py                     # Streamlit application entry point
-├── embed_docs.py               # Optimized Bare Act PDF embedding
-├── LegalChatBot.py             # NyayGPT (Legal Q&A system)
-├── DocumentQAGraph.py          # Ask Document tool
-├── bare_act_retriever.py       # FAISS-based legal retriever
-├── faiss_index_legal/          # Generated FAISS index (required)
-└── .env                        # OpenAI API key
+├── main.py
+├── .env
+│
+├── rag_pipeline/
+│   ├── embed_docs.py
+│   ├── bare_act_retriever.py
+│
+├── utils/
+│   ├── LegalChatBot.py
+│   ├── DocumentQAGraph.py
+│
+├── faiss_index_legal/
+│   ├── index.faiss
+│   ├── index.pkl
+│
+├── legal data/
+│   └── *.pdf
+│
+├── requirements.txt
+└── README.md
 ```
 
 ---
 
-## ⚙️ Installation
+## ⚙️ Setup Instructions
 
-### 1. Clone the Repository
+### 1. Clone Repository
 ```bash
 git clone https://github.com/Kushagra3355/LegalEase-AI.git
 cd LegalEase-AI
 ```
 
-### 2. Create Virtual Environment (Recommended)
+### 2. Create Virtual Environment
 ```bash
 python -m venv venv
-source venv/bin/activate    # Windows: venv\Scripts\activate
 ```
+
+Activate:
+- Windows: `venv\Scripts\activate`
+- Linux/macOS: `source venv/bin/activate`
 
 ### 3. Install Dependencies
 ```bash
 pip install -r requirements.txt
 ```
 
----
-
-## 🔐 Configuration
-
-### OpenAI API Key
-
-Create a `.env` file in the project root:
-
-```env
-OPENAI_API_KEY=your-openai-api-key
+### 4. Configure Environment Variables
+Create a `.env` file:
+```
+OPENAI_API_KEY=your_openai_api_key_here
 ```
 
-For **Streamlit Cloud**, add it under **Settings → Secrets**.
-
 ---
 
-## 🧠 Creating the FAISS Index (Required)
+## 📚 Create FAISS Index
 
-Before running the app, you **must generate the FAISS vector store**:
+Place Bare Act PDFs in:
+```
+legal data/
+```
 
+Run:
 ```bash
-python embed_docs.py
+python rag_pipeline/embed_docs.py
 ```
-
-This creates the `faiss_index_legal/` directory, which is required at runtime.
-
-> ⚠️ If the index exceeds GitHub size limits, use **Git LFS** or cloud storage.
 
 ---
 
-## 🚀 Running the Application
-
+## 🚀 Run Application
 ```bash
 streamlit run main.py
 ```
 
----
-
-## 🧩 Application Modes
-
-### ⚖️ NyayGPT
-- Ask questions about Indian laws
-- Retrieves relevant Bare Act sections
-- Generates concise, easy-to-understand explanations
-- Always cites sources
-- Never gives legal advice
-
-### 📄 Ask Document
-- Upload legal PDFs (judgments, contracts, notices)
-- Ask questions based on uploaded documents
-- Combines document context with Bare Act references
+Open:
+```
+http://localhost:8501
+```
 
 ---
 
-## 🧰 Technologies Used
+## 🧠 Tech Stack
 
-- **Frontend**: Streamlit  
-- **LLM**: OpenAI (GPT-4o-mini)  
-- **Embeddings**: text-embedding-3-small  
-- **Vector Store**: FAISS  
-- **Orchestration**: LangGraph  
-- **Backend**: Python  
-
----
-
-## 🛠 Troubleshooting
-
-**FAISS index not found**
-- Run `python embed_docs.py`
-- Ensure `faiss_index_legal/` exists
-
-**OpenAI API error**
-- Check `.env` file or Streamlit secrets
-- Verify API key validity
-
-**Large index size**
-- Use Git LFS or external storage
+- Python
+- Streamlit
+- LangChain
+- LangGraph
+- FAISS
+- OpenAI API
 
 ---
 
-## 🚧 Future Enhancements
+## 👨‍💻 Author
 
-- Multi-language legal support  
-- Case law database integration  
-- User authentication  
-- Cloud-hosted vector database  
-- PDF citation highlighting  
+**Kushagra Omar**  
+GitHub: https://github.com/Kushagra3355
 
 ---
 
 ## 📄 License
 
 MIT License
-
----
-
-### 👤 Author
-**Kushagra**  
-GitHub: https://github.com/Kushagra3355
-
----
-
-⚖️ *LegalEase AI – Making Indian law more accessible, one question at a time.*
