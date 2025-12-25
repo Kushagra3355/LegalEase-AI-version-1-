@@ -1,11 +1,14 @@
 from dotenv import load_dotenv
 import streamlit as st
-from LegalChatBot import LegalGraphChatBot
-from DocumentQAGraph import DocumentQATool
+from utils.LegalChatBot import LegalGraphChatBot
+from utils.DocumentQAGraph import DocumentQATool
 import time
 import os
+import sys
 
 load_dotenv()
+
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
 
 st.set_page_config(
     page_title="LegalEase AI",
@@ -16,14 +19,16 @@ st.set_page_config(
 # Check for OpenAI API key
 if not os.getenv("OPENAI_API_KEY"):
     st.error("⚠️ OpenAI API key not found!")
-    st.info("""
+    st.info(
+        """
     **For local development:** Add `OPENAI_API_KEY` to your `.env` file
     
     **For Streamlit Cloud:** Go to Settings → Secrets and add:
     ```
     OPENAI_API_KEY = "your-api-key-here"
     ```
-    """)
+    """
+    )
     st.stop()
 
 # Simple styling
@@ -142,17 +147,20 @@ if st.session_state.selected_tool == "NyayGPT":
                 st.success("✓ NyayGPT initialized successfully!")
         except FileNotFoundError as e:
             st.error(str(e))
-            st.info("""
+            st.info(
+                """
             **To fix this:**
             1. Run `python embed_docs.py` locally to create the FAISS index
             2. Commit the `faiss_index_legal` folder to your repository
             3. If the folder is too large (>100MB), use Git LFS or cloud storage
-            """)
+            """
+            )
             st.stop()
         except Exception as e:
             st.error(f"❌ Failed to initialize NyayGPT: {str(e)}")
             with st.expander("Show full error"):
                 import traceback
+
                 st.code(traceback.format_exc())
             st.stop()
 
@@ -194,6 +202,7 @@ if st.session_state.selected_tool == "NyayGPT":
                 st.error(f"❌ Error: {str(e)}")
                 with st.expander("Show details"):
                     import traceback
+
                     st.code(traceback.format_exc())
 
 elif st.session_state.selected_tool == "Ask Document":
@@ -207,17 +216,20 @@ elif st.session_state.selected_tool == "Ask Document":
                 st.success("✓ Document analyzer initialized successfully!")
         except FileNotFoundError as e:
             st.error(str(e))
-            st.info("""
+            st.info(
+                """
             **To fix this:**
             1. Run `python embed_docs.py` locally to create the FAISS index
             2. Commit the `faiss_index_legal` folder to your repository
             3. If the folder is too large (>100MB), use Git LFS or cloud storage
-            """)
+            """
+            )
             st.stop()
         except Exception as e:
             st.error(f"❌ Failed to initialize document analyzer: {str(e)}")
             with st.expander("Show full error"):
                 import traceback
+
                 st.code(traceback.format_exc())
             st.stop()
 
@@ -264,6 +276,7 @@ elif st.session_state.selected_tool == "Ask Document":
                 st.error(f"❌ Error: {str(e)}")
                 with st.expander("Show details"):
                     import traceback
+
                     st.code(traceback.format_exc())
 
     st.divider()
@@ -299,6 +312,7 @@ elif st.session_state.selected_tool == "Ask Document":
                 st.error(f"❌ Error: {str(e)}")
                 with st.expander("Show details"):
                     import traceback
+
                     st.code(traceback.format_exc())
 
 # Footer
